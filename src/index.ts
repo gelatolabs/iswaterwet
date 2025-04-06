@@ -7,7 +7,6 @@ app.post("/ask", async (c) => {
   const apiKey = c.env.ANTHROPIC_API_KEY;
   const accountId = c.env.CLOUDFLARE_ACCOUNT_ID
   const gatewayId = c.env.CLOUDFLARE_AI_GATEWAY_ID
-  console.log("accountId", accountId);
   const baseURL = `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/anthropic`;
   const anthropic = new Anthropic({
     apiKey,

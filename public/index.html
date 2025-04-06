@@ -1,19 +1,438 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
-	</head>
-	<body>
-		<h1 id="heading"></h1>
-		<script>
-			fetch('/message')
-				.then((resp) => resp.text())
-				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Is Water Wet?</title>
+	<style>
+		body {
+			margin: 0;
+			font-family: sans-serif;
+			background: url("https://picsum.photos/id/848/1920/1080.webp?blur") no-repeat center center fixed;
+			background-size: cover;
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			overflow: hidden;
+		}
+
+		#scene {
+			flex: 1;
+			position: relative;
+		}
+
+		#sprites {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 2rem;
+			box-sizing: border-box;
+		}
+
+		.sprite {
+			max-height: 60vh;
+			max-width: 45vw;
+			transition: filter 0.3s ease;
+			visibility: hidden;
+		}
+
+		.dimmed {
+			filter: brightness(0.4);
+		}
+
+		#dialogueBox {
+			background: rgba(0, 0, 0, 0.7);
+			color: #fff;
+			padding: 1rem;
+			box-sizing: border-box;
+			position: absolute;
+			bottom: 0;
+			width: 100%;
+		}
+
+		#speaker {
+			font-weight: bold;
+			margin-bottom: 0.5rem;
+		}
+
+		#dialogueText {}
+
+		#textInputContainer {
+			display: none;
+		}
+
+		#textInput {
+			width: calc(100% - 2rem);
+			margin: 0 auto;
+			padding: 0.5rem;
+			font-size: 1rem;
+			box-sizing: border-box;
+			display: block;
+		}
+
+		#choices {
+			display: none;
+			margin-top: 1rem;
+		}
+
+		#choices button {
+			margin-right: 1rem;
+			padding: 0.5rem 1rem;
+			font-size: 1rem;
+			cursor: pointer;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="scene">
+		<div id="sprites">
+			<img id="playerSprite" class="sprite" src="img/player.png" />
+			<img id="philosopherSprite" class="sprite" src="img/darfin.png" />
+		</div>
+
+		<div id="dialogueBox">
+			<div id="speaker"></div>
+			<div id="dialogueText"></div>
+			<div id="textInputContainer">
+				<input id="textInput" placeholder="Ask your question..." />
+			</div>
+			<div id="choices"></div>
+		</div>
+	</div>
+
+	<script>
+		const cast = [
+			{ id: "player", name: "You", color: "#fff", sprite: "img/player.png" },
+			{ id: "darfin", name: "Darfin", color: "#aef", sprite: "img/darfin.png" },
+			{ id: "sharx", name: "Sharx", color: "#ffa", sprite: "img/sharx.png" },
+			{ id: "nietzscheel", name: "Nietzscheel", color: "#f8a", sprite: "img/nietzscheel.png" },
+			{ id: "aristurtle", name: "Aristurtle", color: "#aff", sprite: "img/aristurtle.png" },
+			{ id: "socratuna", name: "Socratuna", color: "#cdf", sprite: "img/socratuna.png" }
+		];
+		function getCast(id) { return cast.find(c => c.id === id); }
+
+		const script = [
+			"@show player",
+			"You are a young fish, freshly graduated with a degree in Fishlosophy.",
+			"You have set off on a quest to answer the deepest question of all: Is water wet?",
+			"You must venture into the depths of the sea to dialogue with other great minds.",
+			"Per standard fishy etiquette, you may ask each fishlosopher you encounter three questions to arrive closer to the truth.",
+			"@show darfin",
+			"Ah, there's one now! Your old science professor, Darfin. Perhaps they can help.",
+			"player: Hello, professor! I have been pondering if water is wet, and I was wondering if you might help guide me to the truth.",
+			"darfin: Greeeting, young fish. A deep question indeed. There may be a scientific answer, a philosophical answer, perhaps even a spiritual one. I can share my knowledge of science, but it is up to you to find your truth. What would you like to know?",
+			"@ask darfin",
+
+			"You continue on, deeper into the sea.",
+			"@show sharx",
+			"You encounter another fishlosopher, a shark.",
+			"player: Well met! I am on a quest to discover if water is wet. Do you have any insights?",
+			"sharx: Greeting, traveler. I am Sharx, a fishlosopher and economist. What are your thoughts so far, and what do you wish to know?",
+			"@ask sharx",
+
+			"You venture further down.",
+			"@show nietzscheel",
+			"You encounter yet another fishlosopher, an eel. They're a little scary.",
+			"player: Hello there! I am seeking knowledge about the nature of water. Do you think it's wet?",
+			"nietzscheel: Hello, fish. I am Nietzscheel. Do you think water is wet?",
+			"@ask nietzscheel",
+
+			"You've nearly arrived at the ocean floor. Legend has it, this is where the wisest and deepest fishlosophers of all reside.",
+			"@show aristurtle",
+			"You encounter an old turtle. They appear to be very wise.",
+			"player: Oh, wise one! I have traveled far and wide, attempting to discern if water is wet, but I have heard many conflicting ideas. Can you help me?",
+			"aristurtle: Ah, something I have pondered for many moons. Tell me, what knowledge still eludes you?",
+			"@ask aristurtle",
+
+			"Finally, you've arrived at the bottom of the ocean.",
+			"The all-knowing oracle, Socratuna, has foretold your arrival.",
+			"@show socratuna",
+			"socratuna: I sense you have a question for me.",
+			"@yesno",
+			"socratuna: I see...",
+			"socratuna: Is water wet? I will tell you the truth...",
+			"socratuna: Who cares? It doesn't matter if water is wet.",
+			"The end.",
+			"Play again?",
+			"@end"
+		];
+
+		let state = {
+			lineIndex: 0,
+			isThinking: false,
+			isAwaitingInput: false,
+			subMode: null,
+			currentPhilosopher: null,
+			questionIndex: 0,
+			inFinalChoice: false,
+			nextAction: null,
+			conversations: {}
+		};
+
+		const sceneEl = document.getElementById("scene");
+		const speakerEl = document.getElementById("speaker");
+		const dialogueEl = document.getElementById("dialogueText");
+		const textInputWrap = document.getElementById("textInputContainer");
+		const textInput = document.getElementById("textInput");
+		const choicesEl = document.getElementById("choices");
+		const playerSprite = document.getElementById("playerSprite");
+		const philSprite = document.getElementById("philosopherSprite");
+
+		function parseSpeakerLine(line) {
+			const match = line.match(/^(\S+):\s*(.*)$/);
+			if (match && !match[1].includes(" ")) {
+				return { speaker: match[1], text: match[2] };
+			}
+			return null;
+		}
+		function setDialogue(text, speakerId = null) {
+			if (speakerId) {
+				const c = getCast(speakerId);
+				if (c) {
+					speakerEl.textContent = c.name;
+					speakerEl.style.color = c.color;
+				} else {
+					speakerEl.textContent = speakerId;
+					speakerEl.style.color = "#fff";
+				}
+			} else {
+				speakerEl.textContent = "";
+				speakerEl.style.color = "#fff";
+			}
+			dialogueEl.textContent = text;
+			updateDim(speakerId);
+		}
+
+		function showCharacter(charId) {
+			if (charId === "player") {
+				playerSprite.style.visibility = "visible";
+				return;
+			}
+			const c = getCast(charId);
+			if (c) {
+				philSprite.src = c.sprite;
+				philSprite.style.visibility = "visible";
+			}
+		}
+		function hideCharacter(charId) {
+			if (charId === "player") {
+				playerSprite.style.visibility = "hidden";
+				return;
+			}
+			philSprite.style.visibility = "hidden";
+		}
+
+		function updateDim(speakerId) {
+			if (speakerId === "player") {
+				playerSprite.classList.remove("dimmed");
+				philSprite.classList.add("dimmed");
+			} else if (speakerId && getCast(speakerId)) {
+				philSprite.classList.remove("dimmed");
+				playerSprite.classList.add("dimmed");
+			} else {
+				playerSprite.classList.remove("dimmed");
+				philSprite.classList.remove("dimmed");
+			}
+		}
+
+		function nextLine() {
+			if (state.inFinalChoice) return;
+
+			if (state.subMode === "askFlow") {
+				doAskFlow();
+				return;
+			}
+
+			if (typeof state.nextAction === "function") {
+				const fn = state.nextAction;
+				state.nextAction = null;
+				fn();
+				return;
+			}
+
+			if (state.lineIndex >= script.length) {
+				setDialogue("The end.");
+				return;
+			}
+
+			const line = script[state.lineIndex].trim();
+			state.lineIndex++;
+
+			if (line.startsWith("@")) {
+				const [cmdRaw, arg] = line.split(" ");
+				const cmd = cmdRaw.replace("@", "").toLowerCase();
+				switch (cmd) {
+					case "show":
+						showCharacter(arg);
+						nextLine();
+						return;
+					case "hide":
+						hideCharacter(arg);
+						nextLine();
+						return;
+					case "ask":
+						startAskFlow(arg);
+						return;
+					case "yesno":
+						showYesNoButtons();
+						return;
+					case "end":
+						window.location.reload();
+						return;
+					default:
+						nextLine();
+						return;
+				}
+			}
+
+			const parsed = parseSpeakerLine(line);
+			if (parsed) {
+				setDialogue(parsed.text, parsed.speaker);
+			} else {
+				setDialogue(line);
+			}
+		}
+
+		function showYesNoButtons() {
+			setDialogue("But first... what do YOU think? Is water wet?", "socratuna");
+			choicesEl.innerHTML = `
+    <button onclick="chooseFinal('Yes')">Yes</button>
+    <button onclick="chooseFinal('No')">No</button>
+  `;
+			choicesEl.style.display = "block";
+			state.inFinalChoice = true;
+		}
+		function chooseFinal(choice) {
+			if (!state.inFinalChoice) return;
+			state.inFinalChoice = false;
+			choicesEl.style.display = "none";
+			nextLine();
+		}
+
+		function startAskFlow(philId) {
+			state.subMode = "askFlow";
+			state.currentPhilosopher = philId;
+			state.questionIndex = 0;
+			showCharacter(philId);
+
+			const history = [];
+
+			const lines = [
+				script[state.lineIndex - 3],
+				script[state.lineIndex - 2]
+			];
+
+			for (const line of lines) {
+				const parsed = parseSpeakerLine(line);
+				if (parsed) {
+					const speaker = parsed.speaker.toLowerCase();
+					const content = parsed.text;
+
+					if (speaker === "player") {
+						history.push({ role: "user", content });
+					} else {
+						history.push({ role: "assistant", content });
+					}
+				}
+			}
+
+			state.conversations[philId] = history;
+			doAskFlow();
+		}
+
+		function doAskFlow() {
+			if (state.questionIndex >= 3) {
+				state.subMode = null;
+				hideCharacter(state.currentPhilosopher);
+				state.currentPhilosopher = null;
+				nextLine();
+				return;
+			}
+			setDialogue("", null);
+			philSprite.classList.add("dimmed");
+			textInputWrap.style.display = "block";
+			textInput.value = "";
+			textInput.focus();
+			state.isAwaitingInput = true;
+		}
+
+		async function sendUserQuestion() {
+			if (!state.isAwaitingInput || !textInput.value.trim()) return;
+			state.isAwaitingInput = false;
+			textInputWrap.style.display = "none";
+
+			const philId = state.currentPhilosopher;
+			const convo = state.conversations[philId];
+			const userQ = textInput.value.trim();
+
+			state.isThinking = true;
+			let dots = 0;
+			const thinkingInterval = setInterval(() => {
+				setDialogue("Hmm... that's deep" + ".".repeat(++dots), philId);
+			}, 500);
+
+			try {
+				convo.push({ role: "user", content: userQ });
+				const res = await fetch("/ask", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ character: philId, messages: convo })
 				});
-		</script>
-	</body>
+				const data = await res.json();
+				const reply = data.reply || "...(no reply)...";
+
+				clearInterval(thinkingInterval);
+				state.isThinking = false;
+				setDialogue(reply, philId);
+				convo.push({ role: "assistant", content: reply });
+			} catch (err) {
+				clearInterval(thinkingInterval);
+				state.isThinking = false;
+				setDialogue("(error from /ask)", philId);
+			}
+
+			state.nextAction = () => {
+				state.nextAction = null;
+				state.questionIndex++;
+				doAskFlow();
+			};
+		}
+
+		sceneEl.addEventListener("click", () => {
+			if (state.isThinking) return;
+			if (state.isAwaitingInput) return;
+			if (typeof state.nextAction === "function") {
+				const fn = state.nextAction;
+				state.nextAction = null;
+				fn();
+				return;
+			}
+			nextLine();
+		});
+
+		document.addEventListener("keydown", e => {
+			if (e.code === "Space") {
+				if (document.activeElement === textInput) {
+					return;
+				}
+				e.preventDefault();
+				sceneEl.click();
+			}
+		});
+
+		textInput.addEventListener("keypress", e => {
+			if (e.key === "Enter") {
+				sendUserQuestion();
+			}
+		});
+
+		nextLine();
+	</script>
+</body>
+
 </html>

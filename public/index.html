@@ -5,12 +5,15 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>Is Water Wet?</title>
+	<script type="text/javascript"
+		src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
 	<style>
 		body {
 			margin: 0;
+			padding: 0;
 			font-family: sans-serif;
-			background: url("https://picsum.photos/id/848/1920/1080.webp?blur") no-repeat center center fixed;
-			background-size: cover;
+			/* background: url("https://picsum.photos/id/848/1920/1080.webp?blur") no-repeat center center fixed; */
+			/* background-size: cover; */
 			display: flex;
 			flex-direction: column;
 			height: 100vh;
@@ -48,13 +51,13 @@
 
 		#dialogueBox {
 			display: flex;
-			background: rgba(255, 255, 255, 0.2);
+			background: rgba(255, 255, 255, 0.25);
 			color: #fff;
 			margin: 1.5rem;
 			padding: 1rem;
 			border-radius: 1rem;
-			box-shadow: 0 0.25rem 2rem rgba(0, 0, 0, 0.1);
-			backdrop-filter: blur(0.25rem);
+			box-shadow: 0 0.25rem 2rem rgba(0, 0, 0, 0.2);
+			backdrop-filter: blur(0.5rem);
 			border: 1px solid rgba(255, 255, 255, 0.2);
 			box-sizing: border-box;
 			flex-direction: column;
@@ -65,7 +68,7 @@
 			display: none;
 			font-weight: bold;
 			font-size: 125%;
-			text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+			text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.3);
 		}
 
 		#dialogueText {
@@ -73,7 +76,7 @@
 			-webkit-user-select: text;
 			user-select: text;
 			font-size: 150%;
-			text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+			text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.2);
 		}
 
 		#textInputContainer {
@@ -131,10 +134,21 @@
 			width: 4rem;
 			margin-right: 0.25rem;
 		}
+
+		.glslCanvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			filter: brightness(0.9);
+		}
 	</style>
 </head>
 
 <body>
+	<canvas class="glslCanvas" data-fragment-url="shader.frag"></canvas>
+
 	<div id="scene">
 		<div id="sprites">
 			<img id="playerSprite" class="sprite" src="img/player.png" draggable="false" />
@@ -164,7 +178,7 @@
 		function getCast(id) { return cast.find(c => c.id === id); }
 
 		const script = [
-		"@show player",
+			"@show player",
 			"You are a young fish, freshly graduated from the school of Fishlosophy.",
 			"You have set off on a quest to answer the deepest question of all: Is water wet?",
 			"Legend has it that in deepest corners of Marianna's Stench there exist wise fishlosophers that possess vast wisdom.",
@@ -177,6 +191,7 @@
 			"darfin: Greetings, young fish. Tis a deep question indeed. There may be a scientific, fishlosophical, or perhaps even a spiritual answer. I can share my knowledge of science, but it is up to you to find your truth. What would you like to know?",
 			"@ask darfin",
 
+			"@descend",
 			"You continue your descent, deeper into the sea.",
 			"@show sharx",
 			"A large mass appears in your peripheral vision - it's a shark!  To your surprise, the large beast circles you once and warmly greets you with the wave of a fin.",
@@ -184,6 +199,7 @@
 			"sharx: Hello little traveler. I am Sharx, a fishlosopher and economist. What are your thoughts so far, and what do you wish to know?",
 			"@ask sharx",
 
+			"@descend",
 			"Fish food for thought.. you decide to press on - eager to venture further down.",
 			"@show nietzscheel",
 			"You encounter yet another fishlosopher, an eel. They're a little scary.",
@@ -191,6 +207,7 @@
 			"nietzscheel: Hello, fish. I am Nietzscheel. Do you think water is wet?",
 			"@ask nietzscheel",
 
+			"@descend",
 			"You've nearly arrived at the ocean floor. It has been rumoured that this is a place reserved for only the wisest and deepest fishlosophers.",
 			"@show aristurtle",
 			"You come across an old turtle with its eyes closed. Somehow they appear to be very wise - one eye opens as you begin to speak.",
@@ -198,6 +215,7 @@
 			"aristurtle: Ah, something I have pondered for many moons. Tell me, what knowledge still eludes you?",
 			"@ask aristurtle",
 
+			"@descend",
 			"Finally, you arrive at the bottom of the ocean and a slow but steady voice strangely seems to speak to you from within.",
 			"The all-knowing oracle, Socratuna, has foretold your arrival.",
 			"@show socratuna",
@@ -296,6 +314,14 @@
 			}
 		}
 
+		function descend() {
+			const canvas = document.querySelector(".glslCanvas");
+			const brightness = parseFloat(window.getComputedStyle(canvas).filter.match(/brightness\(([^)]+)\)/)[1]);
+			canvas.style.filter = `brightness(${brightness - 0.2})`;
+			playerSprite.style.filter = `brightness(${brightness})`;
+			philSprite.style.filter = `brightness(${brightness})`;
+		}
+
 		function nextLine() {
 			if (state.inFinalChoice) return;
 
@@ -329,6 +355,10 @@
 						return;
 					case "hide":
 						hideCharacter(arg);
+						nextLine();
+						return;
+					case "descend":
+						descend();
 						nextLine();
 						return;
 					case "ask":

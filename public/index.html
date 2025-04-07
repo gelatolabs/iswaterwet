@@ -45,10 +45,6 @@
 			visibility: hidden;
 		}
 
-		.dimmed {
-			filter: brightness(0.4);
-		}
-
 		#dialogueBox {
 			display: flex;
 			background: rgba(255, 255, 255, 0.25);
@@ -145,13 +141,63 @@
 			margin-right: 0.25rem;
 		}
 
+		#bubbleGame {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			display: none;
+			overflow: hidden;
+		}
+
+		#bubbleHint {
+			position: absolute;
+			bottom: 0;
+			left: 50%;
+			transform: translateX(-50%);
+			color: #fff;
+			font-size: 150%;
+			font-family: "Jua", sans-serif;
+			font-weight: 400;
+			font-style: normal;
+			text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+			margin: 1rem;
+		}
+
+		.bubble {
+			position: absolute;
+			width: 33px;
+			height: 33px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+			font-family: "Jua", sans-serif;
+			font-weight: 400;
+			font-style: normal;
+			user-select: none;
+		}
+
+		#bubblePlayer {
+			position: absolute;
+			top: 0;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 4rem;
+			height: 4rem;
+			background: url('img/player.png') center/cover no-repeat;
+			pointer-events: none;
+		}
+
 		.glslCanvas {
 			position: absolute;
 			top: 0;
 			left: 0;
 			width: 100%;
 			height: 100%;
-			filter: brightness(0.9);
+			filter: brightness(1.0);
 		}
 	</style>
 </head>
@@ -173,6 +219,11 @@
 				<button id="askButton" onclick="event.target.focus(); setTimeout(() => sendUserQuestion(), 200)">Ask</button>
 			</div>
 			<div id="choices"></div>
+		</div>
+
+		<div id="bubbleGame">
+			<div id="bubblePlayer"></div>
+			<div id="bubbleHint"></div>
 		</div>
 	</div>
 
@@ -201,7 +252,7 @@
 			"darfin: Greetings, young fish. Tis a deep question indeed. There may be a scientific, fishlosophical, or perhaps even a spiritual answer. I can share my knowledge of science, but it is up to you to find your truth. What would you like to know?",
 			"@ask darfin",
 
-			"@descend",
+			"@descend it's_a_conspiracy",
 			"You continue your descent, deeper into the sea.",
 			"@show sharx",
 			"A large mass appears in your peripheral vision - it's a shark!  To your surprise, the large beast circles you once and warmly greets you with the wave of a fin.",
@@ -209,7 +260,7 @@
 			"sharx: Hello little traveler. I am Sharx, a fishlosopher and economist. What are your thoughts so far, and what do you wish to know?",
 			"@ask sharx",
 
-			"@descend",
+			"@descend challenge_your_assumptions",
 			"Fish food for thought.. you decide to press on - eager to venture further down.",
 			"@show nietzscheel",
 			"You encounter yet another fishlosopher, an eel. They're a little scary.",
@@ -217,7 +268,7 @@
 			"nietzscheel: Hello, fish. I am Nietzscheel. Do you think water is wet?",
 			"@ask nietzscheel",
 
-			"@descend",
+			"@descend think_deeper",
 			"You've nearly arrived at the ocean floor. It has been rumoured that this is a place reserved for only the wisest and deepest fishlosophers.",
 			"@show aristurtle",
 			"You come across an old turtle with its eyes closed. Somehow they appear to be very wise - one eye opens as you begin to speak.",
@@ -225,7 +276,7 @@
 			"aristurtle: Ah, something I have pondered for many moons. Tell me, what knowledge still eludes you?",
 			"@ask aristurtle",
 
-			"@descend",
+			"@descend nothing_is_real",
 			"Finally, you arrive at the bottom of the ocean and a slow but steady voice strangely seems to speak to you from within.",
 			"The all-knowing oracle, Socratuna, has foretold your arrival.",
 			"@show socratuna",
@@ -289,7 +340,6 @@
 			} else {
 				dialogueEl.style.display = "none";
 			}
-			updateDim(speakerId);
 		}
 
 		function showCharacter(charId) {
@@ -311,25 +361,210 @@
 			philSprite.style.visibility = "hidden";
 		}
 
-		function updateDim(speakerId) {
-			if (speakerId === "player") {
-				playerSprite.classList.remove("dimmed");
-				philSprite.classList.add("dimmed");
-			} else if (speakerId && getCast(speakerId)) {
-				philSprite.classList.remove("dimmed");
-				playerSprite.classList.add("dimmed");
-			} else {
-				playerSprite.classList.remove("dimmed");
-				philSprite.classList.remove("dimmed");
-			}
-		}
-
-		function descend() {
+		function descend(hintSentence) {
+			const dialogueBox = document.getElementById("dialogueBox");
+			const sprites = document.getElementById("sprites");
+			const bubbleGame = document.getElementById("bubbleGame");
+			const bubbleHint = document.getElementById("bubbleHint");
+			const bubblePlayer = document.getElementById("bubblePlayer");
 			const canvas = document.querySelector(".glslCanvas");
-			const brightness = parseFloat(window.getComputedStyle(canvas).filter.match(/brightness\(([^)]+)\)/)[1]);
-			canvas.style.filter = `brightness(${brightness - 0.2})`;
-			playerSprite.style.filter = `brightness(${brightness})`;
-			philSprite.style.filter = `brightness(${brightness})`;
+
+			dialogueBox.style.display = "none";
+			sprites.style.display = "none";
+			bubbleGame.style.display = "block";
+			bubbleHint.textContent = "";
+
+			let playerX = window.innerWidth / 2;
+			bubblePlayer.style.left = playerX + "px";
+
+			const maxHealth = 3;
+			let health = maxHealth;
+			let heartEls = [];
+
+			const existingHearts = document.querySelectorAll(".bubbleHeart");
+			existingHearts.forEach(h => h.remove());
+			for (let i = 0; i < maxHealth; i++) {
+				const heart = document.createElement("img");
+				heart.src = "img/heart.png";
+				heart.style.position = "absolute";
+				heart.style.top = "10px";
+				heart.style.left = `${10 + i * 40}px`;
+				heart.style.width = "32px";
+				heart.style.height = "32px";
+				heart.classList.add("bubbleHeart");
+				bubbleGame.appendChild(heart);
+				heartEls.push(heart);
+			}
+
+			function updateHearts() {
+				for (let i = 0; i < maxHealth; i++) {
+					heartEls[i].style.opacity = i < health ? "1" : "0.2";
+				}
+			}
+
+			updateHearts();
+
+			function onMouseMove(e) {
+				playerX = e.clientX - 32;
+			}
+			window.addEventListener("mousemove", onMouseMove);
+
+			const letters = hintSentence.split("");
+			let totalDistance = 0;
+			const entities = [];
+
+			for (let i = 0; i < letters.length; i++) {
+				const spacing = 50 + Math.random() * 200;
+				totalDistance += spacing;
+
+				const bubbleX = 100 + Math.random() * (window.innerWidth - 240);
+				const bubble = {
+					type: "bubble",
+					letter: letters[i],
+					x: bubbleX,
+					startY: window.innerHeight + totalDistance,
+					popTime: null,
+					collected: false,
+					el: null,
+					wiggleAmp: 30 + Math.random() * 20,
+					wiggleFreq: 0.002 + Math.random() * 0.001,
+				};
+				entities.push(bubble);
+
+				if (Math.random() < 0.75) {
+					const bombSpacing = 50 + Math.random() * 200;
+					totalDistance += bombSpacing;
+					const bombX = 100 + Math.random() * (window.innerWidth - 240);
+					const bomb = {
+						type: "bomb",
+						x: bombX,
+						startY: window.innerHeight + totalDistance,
+						popTime: null,
+						collected: false,
+						el: null,
+						wiggleAmp: 30 + Math.random() * 20,
+						wiggleFreq: 0.002 + Math.random() * 0.001,
+					};
+					entities.push(bomb);
+				}
+			}
+
+			entities.forEach((e) => {
+				const el = document.createElement("div");
+				el.className = "bubble";
+				el.style.backgroundImage = e.type === "bubble" ? "url('img/bubble.png')" : "url('img/bomb.png')";
+				if (e.type === "bubble") el.textContent = e.letter;
+				bubbleGame.appendChild(el);
+				e.el = el;
+			});
+
+			let startTime = null;
+			let gameActive = true;
+			const speed = 0.3;
+			const duration = totalDistance / speed;
+			const initialBrightness = parseFloat(window.getComputedStyle(canvas).filter.match(/brightness\(([^)]+)\)/)[1]);
+
+			function animate(timestamp) {
+				if (!startTime) startTime = timestamp;
+				const elapsed = timestamp - startTime;
+
+				const brightness = initialBrightness - 0.2 * Math.min(elapsed / duration, 1);
+				canvas.style.filter = `brightness(${brightness})`;
+				playerSprite.style.filter = `brightness(${brightness})`;
+				philSprite.style.filter = `brightness(${brightness})`;
+
+				bubblePlayer.style.left = playerX + "px";
+
+				let allDone = true;
+
+				for (const e of entities) {
+					if (e.popTime !== null) {
+						if (performance.now() - e.popTime > 500) {
+							if (e.el) {
+								bubbleGame.removeChild(e.el);
+								e.el = null;
+							}
+						}
+						continue;
+					}
+
+					const y = e.startY - speed * elapsed;
+					const wiggle = e.wiggleAmp * Math.sin(e.wiggleFreq * elapsed);
+					const x = e.x + wiggle;
+					e.el.style.left = `${x}px`;
+					e.el.style.top = `${y}px`;
+
+					if (!e.collected) {
+						allDone = false;
+
+						const entityLeft = x;
+						const entityRight = x + 33;
+						const entityTop = y;
+						const entityBottom = y + 33;
+						const playerLeft = playerX;
+						const playerRight = playerX + 64;
+						const playerTop = 0;
+						const playerBottom = 64;
+
+						if (
+							entityRight > playerLeft &&
+							entityLeft < playerRight &&
+							entityBottom > playerTop &&
+							entityTop < playerBottom
+						) {
+							e.collected = true;
+							e.popTime = performance.now();
+
+							if (e.type === "bubble") {
+								e.el.style.backgroundImage = "url('img/bubble-popped.png')";
+								bubbleHint.textContent += e.letter === "_" ? " " : e.letter;
+							} else {
+								e.el.style.backgroundImage = "url('img/bomb-exploding.png')";
+								health--;
+								updateHearts();
+								if (health <= 0) {
+									gameActive = false;
+									setTimeout(() => {
+										for (const e of entities) {
+											if (e.el) bubbleGame.removeChild(e.el);
+										}
+										window.removeEventListener("mousemove", onMouseMove);
+										descend(hintSentence);
+									}, 1000);
+									return;
+								}
+							}
+						}
+					}
+
+					if (y < -33 && !e.collected) {
+						e.popTime = performance.now();
+					}
+				}
+
+				if (allDone) {
+					setTimeout(endMinigame, 1000);
+					return;
+				}
+
+				if (gameActive) requestAnimationFrame(animate);
+			}
+
+			requestAnimationFrame(animate);
+
+			function endMinigame() {
+				gameActive = false;
+				window.removeEventListener("mousemove", onMouseMove);
+				for (const e of entities) {
+					if (e.el) bubbleGame.removeChild(e.el);
+				}
+				document.querySelectorAll(".bubbleHeart").forEach(h => h.remove());
+				bubbleGame.style.display = "none";
+				dialogueBox.style.display = "flex";
+				sprites.style.display = "flex";
+				setDialogue(`Hmm... ${bubbleHint.textContent}? Some kind of clue from the depths? Maybe I can ask the next fishlosopher I find about this.`, "player");
+				state.lineIndex--;
+			}
 		}
 
 		function nextLine() {
@@ -368,7 +603,7 @@
 						nextLine();
 						return;
 					case "descend":
-						descend();
+						descend(arg);
 						nextLine();
 						return;
 					case "ask":
@@ -450,7 +685,6 @@
 				return;
 			}
 			setDialogue("", null);
-			philSprite.classList.add("dimmed");
 			textInputContainer.style.display = "flex";
 			textInput.value = "";
 			textInput.focus();
@@ -491,7 +725,7 @@
 			} catch (err) {
 				clearInterval(thinkingInterval);
 				state.isThinking = false;
-				setDialogue("(error from /ask)", philId);
+				setDialogue("Error: wisdom not found (the AI service is probably at capacity, sorry!)", philId);
 			}
 
 			state.nextAction = () => {

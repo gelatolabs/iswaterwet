@@ -1,7 +1,18 @@
-import { Hono } from "hono";
+import { Hono, Context, Next } from "hono";
 import Anthropic from "@anthropic-ai/sdk";
+import { rateLimit, RateLimitKeyFunc } from "@elithrar/workers-hono-rate-limit";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Cloudflare.Env }>();
+
+const getKey: RateLimitKeyFunc = (c: Context): string => {
+  return c.req.header("cf-connecting-ip") || "";
+};
+
+const rateLimiter = async (c: Context, next: Next) => {
+  return await rateLimit(c.env.RATE_LIMITER, getKey)(c, next);
+};
+
+app.use("*", rateLimiter);
 
 app.post("/ask", async (c) => {
   const apiKey = c.env.ANTHROPIC_API_KEY;

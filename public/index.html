@@ -7,13 +7,13 @@
 	<title>Is Water Wet?</title>
 	<script type="text/javascript"
 		src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Caesar+Dressing&family=Jua&display=swap" rel="stylesheet">
 	<style>
 		body {
 			margin: 0;
 			padding: 0;
-			font-family: sans-serif;
-			/* background: url("https://picsum.photos/id/848/1920/1080.webp?blur") no-repeat center center fixed; */
-			/* background-size: cover; */
 			display: flex;
 			flex-direction: column;
 			height: 100vh;
@@ -66,17 +66,22 @@
 
 		#speaker {
 			display: none;
-			font-weight: bold;
-			font-size: 125%;
-			text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.3);
+			font-family: "Caesar Dressing", sans-serif;
+			font-weight: 400;
+			font-style: normal;
+			font-size: 150%;
+			text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
 		}
 
 		#dialogueText {
 			display: none;
+			font-family: "Jua", sans-serif;
+			font-weight: 400;
+			font-style: normal;
+			font-size: 150%;
+			text-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
 			-webkit-user-select: text;
 			user-select: text;
-			font-size: 150%;
-			text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.2);
 		}
 
 		#textInputContainer {
@@ -89,7 +94,9 @@
 			width: calc(100% - 2rem);
 			margin-right: 0.5rem;
 			padding: 0.5rem 1rem;
+			font-family: "Courier New", monospace;
 			font-size: 125%;
+			text-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
 			box-sizing: border-box;
 			display: block;
 			border-radius: 1.5rem;
@@ -106,6 +113,9 @@
 
 		button {
 			padding: 0.5rem 1rem;
+			font-family: "Caesar Dressing", sans-serif;
+			font-weight: 400;
+			font-style: normal;
 			font-size: 125%;
 			background-color: #008cf1;
 			color: #fff;
@@ -169,11 +179,11 @@
 	<script>
 		const cast = [
 			{ id: "player", name: "You", color: "#fff", sprite: "img/player.png" },
-			{ id: "darfin", name: "Darfin", color: "#cadef5", sprite: "img/darfin.png" },
-			{ id: "sharx", name: "Sharx", color: "#b8cfe8", sprite: "img/sharx.png" },
-			{ id: "nietzscheel", name: "Nietzscheel", color: "#afbe67", sprite: "img/nietzscheel.png" },
-			{ id: "aristurtle", name: "Aristurtle", color: "#eadf8f", sprite: "img/aristurtle.png" },
-			{ id: "socratuna", name: "Socratuna", color: "#ecad9a", sprite: "img/socratuna.png" }
+			{ id: "darfin", name: "Darfin", color: "#78c4e7", sprite: "img/darfin.png" },
+			{ id: "sharx", name: "Sharx", color: "#78c4e7", sprite: "img/sharx.png" },
+			{ id: "nietzscheel", name: "Nietzscheel", color: "#78c4e7", sprite: "img/nietzscheel.png" },
+			{ id: "aristurtle", name: "Aristurtle", color: "#78c4e7", sprite: "img/aristurtle.png" },
+			{ id: "socratuna", name: "Socratuna", color: "#78c4e7", sprite: "img/socratuna.png" }
 		];
 		function getCast(id) { return cast.find(c => c.id === id); }
 

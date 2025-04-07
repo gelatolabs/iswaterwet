@@ -15,6 +15,8 @@
 			flex-direction: column;
 			height: 100vh;
 			overflow: hidden;
+			-webkit-user-select: none;
+			user-select: none;
 		}
 
 		#scene {
@@ -24,12 +26,12 @@
 
 		#sprites {
 			position: absolute;
+			bottom: 0;
 			width: 100%;
-			height: 100%;
+			height: 60%;
 			display: flex;
 			justify-content: space-between;
-			align-items: center;
-			padding: 2rem;
+			align-items: flex-end;
 			box-sizing: border-box;
 		}
 
@@ -45,45 +47,89 @@
 		}
 
 		#dialogueBox {
-			background: rgba(0, 0, 0, 0.7);
+			display: flex;
+			background: rgba(255, 255, 255, 0.2);
 			color: #fff;
+			margin: 1.5rem;
 			padding: 1rem;
+			border-radius: 1rem;
+			box-shadow: 0 0.25rem 2rem rgba(0, 0, 0, 0.1);
+			backdrop-filter: blur(0.25rem);
+			border: 1px solid rgba(255, 255, 255, 0.2);
 			box-sizing: border-box;
-			position: absolute;
-			bottom: 0;
-			width: 100%;
+			flex-direction: column;
+			gap: 0.5rem;
 		}
 
 		#speaker {
+			display: none;
 			font-weight: bold;
-			margin-bottom: 0.5rem;
+			font-size: 125%;
+			text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 		}
 
-		#dialogueText {}
+		#dialogueText {
+			display: none;
+			-webkit-user-select: text;
+			user-select: text;
+			font-size: 150%;
+			text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+		}
 
 		#textInputContainer {
 			display: none;
+			gap: 0.5rem;
+			box-sizing: border-box;
 		}
 
 		#textInput {
 			width: calc(100% - 2rem);
-			margin: 0 auto;
-			padding: 0.5rem;
-			font-size: 1rem;
+			margin-right: 0.5rem;
+			padding: 0.5rem 1rem;
+			font-size: 125%;
 			box-sizing: border-box;
 			display: block;
+			border-radius: 1.5rem;
+			height: 3rem;
+			background: rgba(0, 0, 0, 0.2);
+			color: #fff;
+			border: 1px solid rgba(0, 0, 0, 0.2);
+		}
+
+		#textInput::placeholder {
+			color: #fff;
+			opacity: 0.75;
+		}
+
+		button {
+			padding: 0.5rem 1rem;
+			font-size: 125%;
+			background-color: #008cf1;
+			color: #fff;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			border-radius: 1.5rem;
+			box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.2);
+			cursor: pointer;
+			transition: background-color 0.3s ease, box-shadow 0.3s ease;
+		}
+
+		button:hover {
+			background-color: #007bd2;
+		}
+
+		button:active,
+		button:focus {
+			box-shadow: none;
 		}
 
 		#choices {
 			display: none;
-			margin-top: 1rem;
+			margin-top: 0.25rem;
 		}
 
 		#choices button {
-			margin-right: 1rem;
-			padding: 0.5rem 1rem;
-			font-size: 1rem;
-			cursor: pointer;
+			width: 4rem;
+			margin-right: 0.25rem;
 		}
 	</style>
 </head>
@@ -91,8 +137,8 @@
 <body>
 	<div id="scene">
 		<div id="sprites">
-			<img id="playerSprite" class="sprite" src="img/player.png" />
-			<img id="philosopherSprite" class="sprite" src="img/darfin.png" />
+			<img id="playerSprite" class="sprite" src="img/player.png" draggable="false" />
+			<img id="philosopherSprite" class="sprite" src="img/darfin.png" draggable="false" />
 		</div>
 
 		<div id="dialogueBox">
@@ -100,6 +146,7 @@
 			<div id="dialogueText"></div>
 			<div id="textInputContainer">
 				<input id="textInput" placeholder="Ask your question..." />
+				<button id="askButton" onclick="event.target.focus(); setTimeout(() => sendUserQuestion(), 200)">Ask</button>
 			</div>
 			<div id="choices"></div>
 		</div>
@@ -108,11 +155,11 @@
 	<script>
 		const cast = [
 			{ id: "player", name: "You", color: "#fff", sprite: "img/player.png" },
-			{ id: "darfin", name: "Darfin", color: "#aef", sprite: "img/darfin.png" },
-			{ id: "sharx", name: "Sharx", color: "#ffa", sprite: "img/sharx.png" },
-			{ id: "nietzscheel", name: "Nietzscheel", color: "#f8a", sprite: "img/nietzscheel.png" },
-			{ id: "aristurtle", name: "Aristurtle", color: "#aff", sprite: "img/aristurtle.png" },
-			{ id: "socratuna", name: "Socratuna", color: "#cdf", sprite: "img/socratuna.png" }
+			{ id: "darfin", name: "Darfin", color: "#cadef5", sprite: "img/darfin.png" },
+			{ id: "sharx", name: "Sharx", color: "#b8cfe8", sprite: "img/sharx.png" },
+			{ id: "nietzscheel", name: "Nietzscheel", color: "#afbe67", sprite: "img/nietzscheel.png" },
+			{ id: "aristurtle", name: "Aristurtle", color: "#eadf8f", sprite: "img/aristurtle.png" },
+			{ id: "socratuna", name: "Socratuna", color: "#ecad9a", sprite: "img/socratuna.png" }
 		];
 		function getCast(id) { return cast.find(c => c.id === id); }
 
@@ -177,7 +224,7 @@
 		const sceneEl = document.getElementById("scene");
 		const speakerEl = document.getElementById("speaker");
 		const dialogueEl = document.getElementById("dialogueText");
-		const textInputWrap = document.getElementById("textInputContainer");
+		const textInputContainer = document.getElementById("textInputContainer");
 		const textInput = document.getElementById("textInput");
 		const choicesEl = document.getElementById("choices");
 		const playerSprite = document.getElementById("playerSprite");
@@ -192,6 +239,7 @@
 		}
 		function setDialogue(text, speakerId = null) {
 			if (speakerId) {
+				speakerEl.style.display = "block";
 				const c = getCast(speakerId);
 				if (c) {
 					speakerEl.textContent = c.name;
@@ -201,10 +249,16 @@
 					speakerEl.style.color = "#fff";
 				}
 			} else {
+				speakerEl.style.display = "none";
 				speakerEl.textContent = "";
 				speakerEl.style.color = "#fff";
 			}
-			dialogueEl.textContent = text;
+			if (text.length > 0) {
+				dialogueEl.style.display = "block";
+				dialogueEl.textContent = text;
+			} else {
+				dialogueEl.style.display = "none";
+			}
 			updateDim(speakerId);
 		}
 
@@ -355,7 +409,7 @@
 			}
 			setDialogue("", null);
 			philSprite.classList.add("dimmed");
-			textInputWrap.style.display = "block";
+			textInputContainer.style.display = "flex";
 			textInput.value = "";
 			textInput.focus();
 			state.isAwaitingInput = true;
@@ -364,14 +418,16 @@
 		async function sendUserQuestion() {
 			if (!state.isAwaitingInput || !textInput.value.trim()) return;
 			state.isAwaitingInput = false;
-			textInputWrap.style.display = "none";
 
 			const philId = state.currentPhilosopher;
 			const convo = state.conversations[philId];
 			const userQ = textInput.value.trim();
 
+			textInputContainer.style.display = "none";
+			setDialogue("Hmm... that's deep", philId);
+
 			state.isThinking = true;
-			let dots = 0;
+			let dots = 1;
 			const thinkingInterval = setInterval(() => {
 				setDialogue("Hmm... that's deep" + ".".repeat(++dots), philId);
 			}, 500);

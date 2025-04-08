@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Is Water Wet?</title>
+	<script type="text/javascript"
+		src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Caesar+Dressing&family=Jua&display=swap" rel="stylesheet">
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			height: 100vh;
+			overflow: hidden;
+			-webkit-user-select: none;
+			user-select: none;
+		}
+
+		#menu {
+			margin-top: 50vh;
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+			transform: translateY(-50%);
+		}
+
+		p {
+			color: #fff;
+			font-family: "Jua", sans-serif;
+			font-weight: 400;
+			font-style: normal;
+			font-size: 150%;
+			text-align: center;
+			text-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+		}
+
+		button {
+			width: 6rem;
+			margin: 0 auto;
+			padding: 0.5rem 1rem;
+			font-family: "Caesar Dressing", sans-serif;
+			font-weight: 400;
+			font-style: normal;
+			font-size: 125%;
+			text-decoration: none;
+			text-align: center;
+			background-color: #008cf1;
+			color: #fff;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			border-radius: 1.5rem;
+			box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.2);
+			cursor: pointer;
+			transition: background-color 0.3s ease, box-shadow 0.3s ease;
+		}
+
+		button:hover {
+			background-color: #007bd2;
+		}
+
+		button:active,
+		button:focus {
+			box-shadow: none;
+		}
+
+		img {
+			width: 16rem;
+			max-width: 50%;
+			height: auto;
+			margin: 0 auto;
+			cursor: pointer;
+		}
+
+		.glslCanvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			filter: brightness(0.5);
+			z-index: -1;
+		}
+	</style>
+</head>
+
+<body>
+	<canvas class="glslCanvas" data-fragment-url="shader.frag"></canvas>
+
+	<div id="menu">
+		<img src="img/gelato.png" onClick="window.open('https://gelatolabs.xyz', '_blank')" />
+
+		<p>The Gelato Labs "G-Team" for LD57 is:</p>
+		<p style="text-align: left; margin: 0 auto;">
+			<span style="color: #0f0">Kyle Farwell (kfarwell):</span> Programming, Writing, Art<br />
+			<span style="color: #0f0">Ryan Refcio:</span> Writing, Programming<br />
+			<span style="color: #0f0">FuuGhoul:</span> Art
+		</p>
+		<p>Credits</p>
+		<p style="text-align: left; margin: 0 auto;">
+			<a href="https://steviasphere.bandcamp.com/album/collectathon" target="_blank"
+				style="color: #0f0">Collectathon</a> music by Stevia Sphere, licensed under CC BY<br />
+			<a href="https://steviasphere.bandcamp.com/album/pool-water-blue" target="_blank" style="color: #0f0">pool water
+				blue</a> music by Stevia Sphere, licensed under CC BY<br />
+			<a href="https://freesound.org/people/sbecker666/sounds/571892/" target="_blank" style="color: #0f0">Bubble
+				pop</a> sound by sbecker666, licensed under CC0<br />
+			<a href="https://freesound.org/people/Sheyvan/sounds/470084/" target="_blank" style="color: #0f0">Mine
+				explosion</a> sound by Sheyvan, licensed under CC0<br />
+			<a href="https://fonts.google.com/specimen/Caesar+Dressing" target="_blank" style="color: #0f0">Caesar
+				Dressing</a> font by Open Window, licensed under SIL OFL 1.1<br />
+			<a href="https://fonts.google.com/specimen/Jua" target="_blank" style="color: #0f0">Jua</a> font by The Jua
+			Project Authors, licensed under SIL OFL 1.1
+		</p>
+
+		<br />
+		<button onclick="window.parent.closeFrame()">Back</button>
+
+		<audio id="music" src="snd/credits.mp3" loop autoplay></audio>
+
+		<script>
+			function getCookie(name) {
+				return document.cookie.split('; ').reduce((r, v) => {
+					const parts = v.split('=');
+					return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+				}, null);
+			}
+			const savedVol = parseFloat(getCookie("volume")) || 0.5;
+			document.getElementById("music").volume = savedVol;
+		</script>
+	</div>
+</body>
+
+</html>

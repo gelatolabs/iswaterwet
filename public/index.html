@@ -44,7 +44,7 @@
 			margin: 0 0 -1.5rem 0;
 		}
 
-		a {
+		button {
 			width: 6rem;
 			margin: 0 auto;
 			padding: 0.5rem 1rem;
@@ -63,12 +63,12 @@
 			transition: background-color 0.3s ease, box-shadow 0.3s ease;
 		}
 
-		a:hover {
+		button:hover {
 			background-color: #007bd2;
 		}
 
-		a:active,
-		a:focus {
+		button:active,
+		button:focus {
 			box-shadow: none;
 		}
 
@@ -92,6 +92,74 @@
 			filter: brightness(0.5);
 			z-index: -1;
 		}
+
+		#volumeModal {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: #000;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			color: #fff;
+			font-family: 'Jua', sans-serif;
+			font-size: 120%;
+			z-index: 10;
+		}
+
+		#volumeSlider {
+			width: 30rem;
+			max-width: 90%;
+			-webkit-appearance: none;
+			height: 0.5rem;
+			border-radius: 0.25rem;
+			background: #fff;
+			outline: none;
+		}
+
+		#volumeSlider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 25px;
+			height: 25px;
+			border-radius: 50%;
+			background: #008cf1;
+			cursor: pointer;
+		}
+
+		#volumeSlider::-moz-range-thumb {
+			width: 25px;
+			height: 25px;
+			border-radius: 50%;
+			background: #008cf1;
+			cursor: pointer;
+		}
+
+		#volumeClose {
+			margin-top: 2rem;
+			padding: 0.5rem 1.5rem;
+			font-family: 'Caesar Dressing', sans-serif;
+			font-size: 125%;
+			background-color: #008cf1;
+			color: #fff;
+			border: none;
+			border-radius: 1.5rem;
+			cursor: pointer;
+		}
+
+		#contentFrame {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			border: none;
+			display: none;
+			z-index: 2;
+		}
 	</style>
 </head>
 
@@ -101,11 +169,73 @@
 	<div id="menu">
 		<h1>Is Water Wet?</h1>
 		<h2>A <span style="color: #0f0">Gelato Labs</span> production for Ludum Dare 57 "Depths"</h2>
-		<a href="game">Play</a>
-		<a href="credits">Credits</a>
+		<button onclick="openFrame('game')">Play</button>
+		<button onclick="openFrame('credits')">Credits</button>
 	</div>
 
 	<img src="img/gelato.png" onClick="window.open('https://gelatolabs.xyz', '_blank')" />
+
+	<div id="volumeModal">
+		<p>Choose your favourite volume!</p>
+		<input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.5" />
+		<button id="volumeClose" onclick="closeVolumeModal()">OK</button>
+	</div>
+
+	<iframe id="contentFrame"></iframe>
+
+	<audio id="music" src="snd/menu.mp3" loop></audio>
+
+	<script>
+		const frame = document.getElementById('contentFrame');
+		const menu = document.getElementById('menu');
+		const music = document.getElementById("music");
+		const slider = document.getElementById("volumeSlider");
+
+		function setCookie(name, value, days = 365) {
+			const expires = new Date(Date.now() + days * 864e5).toUTCString();
+			document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+		}
+		function getCookie(name) {
+			return document.cookie.split('; ').reduce((r, v) => {
+				const parts = v.split('=');
+				return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+			}, null);
+		}
+
+		const savedVol = parseFloat(getCookie("volume"));
+		if (!isNaN(savedVol)) {
+			music.volume = savedVol;
+			slider.value = savedVol;
+		}
+
+		slider.addEventListener("input", () => {
+			music.volume = parseFloat(slider.value);
+			music.play().catch(() => { });
+		});
+
+		function closeVolumeModal() {
+			const modal = document.getElementById("volumeModal");
+			modal.style.display = "none";
+			music.volume = parseFloat(slider.value);
+			setCookie("volume", music.volume);
+			music.play().catch(() => { });
+		}
+
+		function openFrame(url) {
+			menu.style.display = "none";
+			music.pause();
+			frame.style.display = "block";
+			frame.src = url;
+		}
+
+		function closeFrame() {
+			frame.style.display = "none";
+			frame.src = "";
+			menu.style.display = "flex";
+			music.currentTime = 0;
+			music.play().catch(() => { });
+		}
+	</script>
 </body>
 
 </html>

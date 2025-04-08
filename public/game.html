@@ -227,7 +227,13 @@
 		</div>
 	</div>
 
+	<audio id="musicPlayer" loop></audio>
+	<audio id="sfxPlayer"></audio>
+
 	<script>
+		const musicPlayer = document.getElementById("musicPlayer");
+		const sfxPlayer = document.getElementById("sfxPlayer");
+
 		const cast = [
 			{ id: "player", name: "You", color: "#05700b", sprite: "img/player.png" },
 			{ id: "darfin", name: "Darfin", color: "#461ed1", sprite: "img/darfin.png" },
@@ -239,8 +245,10 @@
 		function getCast(id) { return cast.find(c => c.id === id); }
 
 		const script = [
+			"@music darfin",
 			"@show player",
 			"You are a young fish, freshly graduated from the school of Fishlosophy.",
+			"@descend aaa",
 			"You have set off on a quest to answer the deepest question of all: Is water wet?",
 			"Legend has it that in deepest corners of Marianna's Stench there exist wise fishlosophers that possess vast wisdom.",
 			"Your task is to venture into the depths of the sea, locate and dialogue with these great minds.",
@@ -252,33 +260,41 @@
 			"darfin: Greetings, young fish. Tis a deep question indeed. There may be a scientific, fishlosophical, or perhaps even a spiritual answer. I can share my knowledge of science, but it is up to you to find your truth. What would you like to know?",
 			"@ask darfin",
 
+			"@music descend",
 			"@descend it's_a_conspiracy",
 			"You continue your descent, deeper into the sea.",
+			"@music sharx",
 			"@show sharx",
 			"A large mass appears in your peripheral vision - it's a shark!  To your surprise, the large beast circles you once and warmly greets you with the wave of a fin.",
 			"player: Well met! I am on a quest to discover if water is wet. Do you have any insights?",
 			"sharx: Hello little traveler. I am Sharx, a fishlosopher and economist. What are your thoughts so far, and what do you wish to know?",
 			"@ask sharx",
 
+			"@music descend",
 			"@descend challenge_your_assumptions",
 			"Fish food for thought.. you decide to press on - eager to venture further down.",
+			"@music nietzscheel",
 			"@show nietzscheel",
 			"You encounter yet another fishlosopher, an eel. They're a little scary.",
 			"player: Hello there! I am seeking knowledge about the nature of water. Do you think it's wet?",
 			"nietzscheel: Hello, fish. I am Nietzscheel. Do you think water is wet?",
 			"@ask nietzscheel",
 
+			"@music descend",
 			"@descend think_deeper",
 			"You've nearly arrived at the ocean floor. It has been rumoured that this is a place reserved for only the wisest and deepest fishlosophers.",
+			"@music aristurtle",
 			"@show aristurtle",
 			"You come across an old turtle with its eyes closed. Somehow they appear to be very wise - one eye opens as you begin to speak.",
 			"player: Oh, wise one! I have traveled far and wide, attempting to discern if water is wet, but I have heard many conflicting ideas. Can you help me?",
 			"aristurtle: Ah, something I have pondered for many moons. Tell me, what knowledge still eludes you?",
 			"@ask aristurtle",
 
+			"@music descend",
 			"@descend nothing_is_real",
 			"Finally, you arrive at the bottom of the ocean and a slow but steady voice strangely seems to speak to you from within.",
 			"The all-knowing oracle, Socratuna, has foretold your arrival.",
+			"@music socratuna",
 			"@show socratuna",
 			"socratuna: I sense you have a question for me.",
 			"@yesno",
@@ -309,6 +325,60 @@
 		const choicesEl = document.getElementById("choices");
 		const playerSprite = document.getElementById("playerSprite");
 		const philSprite = document.getElementById("philosopherSprite");
+
+		function getCookie(name) {
+			return document.cookie.split('; ').reduce((r, v) => {
+				const parts = v.split('=');
+				return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+			}, null);
+		}
+
+		function playMusic(filename) {
+			const newSrc = `snd/${filename}.mp3`;
+			if (musicPlayer.src.includes(newSrc)) return;
+
+			const savedVol = parseFloat(getCookie("volume")) || 0.5;
+			const fadeOut = musicPlayer.volume > 0;
+			const FADE_DURATION = 1000;
+
+			if (fadeOut) {
+				const startVol = musicPlayer.volume;
+				const step = startVol / (FADE_DURATION / 50);
+
+				const fadeInterval = setInterval(() => {
+					musicPlayer.volume = Math.max(0, musicPlayer.volume - step);
+					if (musicPlayer.volume <= 0) {
+						clearInterval(fadeInterval);
+						musicPlayer.src = newSrc;
+						musicPlayer.volume = 0;
+						musicPlayer.play().catch(() => { });
+						fadeIn();
+					}
+				}, 50);
+			} else {
+				musicPlayer.src = newSrc;
+				musicPlayer.volume = 0;
+				musicPlayer.play().catch(() => { });
+				fadeIn();
+			}
+
+			function fadeIn() {
+				const step = savedVol / (FADE_DURATION / 50);
+				const fadeInterval = setInterval(() => {
+					musicPlayer.volume = Math.min(savedVol, musicPlayer.volume + step);
+					if (musicPlayer.volume >= savedVol) {
+						clearInterval(fadeInterval);
+					}
+				}, 50);
+			}
+		}
+
+		function playSound(filename) {
+			const savedVol = parseFloat(getCookie("volume")) || 0.5;
+			sfxPlayer.src = `snd/${filename}.mp3`;
+			sfxPlayer.volume = savedVol;
+			sfxPlayer.play().catch(() => { });
+		}
 
 		function parseSpeakerLine(line) {
 			const match = line.match(/^(\S+):\s*(.*)$/);
@@ -515,9 +585,11 @@
 							e.popTime = performance.now();
 
 							if (e.type === "bubble") {
+								playSound("pop");
 								e.el.style.backgroundImage = "url('img/bubble-popped.png')";
 								bubbleHint.textContent += e.letter === "_" ? " " : e.letter;
 							} else {
+								playSound("bomb");
 								e.el.style.backgroundImage = "url('img/bomb-exploding.png')";
 								health--;
 								updateHearts();
@@ -600,7 +672,15 @@
 					case "hide":
 						hideCharacter(arg);
 						nextLine();
+						return
+					case "music":
+						playMusic(arg);
+						nextLine();
 						return;
+					case "play":
+						playSound(arg);
+						nextLine();
+						return;;
 					case "descend":
 						descend(arg);
 						nextLine();
@@ -612,7 +692,7 @@
 						showYesNoButtons();
 						return;
 					case "end":
-						window.location.href = "credits";
+						window.parent.openFrame('credits');
 						return;
 					default:
 						nextLine();
